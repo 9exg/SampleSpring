@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ob">
+
+	<!-- 총 게시글 수 db에서 보내기 -->
+	<select id="getObCnt" resultType="Integer">
+		SELECT COUNT(*) AS CNT
+		FROM OB
+		WHERE OB_DEL = 1
+	</select>
+	
+	<!-- 목록 출력 -->
+	<select id="getOb" parameterType="hashmap" resultType="hashmap">
+		SELECT O.OB_NO, O.OB_WRITER, O.OB_CON, O.OB_DT
+		FROM ( SELECT OB_NO, OB_WRITER, OB_CON, 
+		               CASE WHEN TO_CHAR(SYSDATE, 'YYYY-MM-DD') = TO_CHAR(OB_DT, 'YYYY-MM-DD')
+		                    THEN TO_CHAR(OB_DT, 'HH24:MI')
+		                    ELSE TO_CHAR(OB_DT, 'YYYY-MM-DD')
+		                END AS OB_DT,
+		                ROW_NUMBER() OVER(ORDER BY OB_NO DESC) AS RNUM
+		        FROM OB
+		        WHERE OB_DEL = 1 ) O
+		WHERE O.RNUM BETWEEN #{startCnt} AND #{endCnt}
+	</select>
+	
+	<!-- 등록 -->
+	<insert id="obWrite" parameterType="hashmap">
+		INSERT INTO OB(OB_NO, OB_WRITER, OB_CON)
+		VALUES (OB_SEQ.NEXTVAL, #{writer}, #{con})
+	</insert>
+	
+	<!-- 업데이트 -->
+	<update id="obUpdate" parameterType="hashmap">
+		UPDATE OB SET OB_WRITER = #{writer},
+		              OB_CON= #{con}
+		WHERE OB_NO = #{no}
+	</update>
+	
+	<!-- 삭제 -->
+	<update id="obDelete" parameterType="hashmap">
+		UPDATE OB SET OB_DEL = 0
+		WHERE OB_NO = #{no}
+	</update>
+	
+	
+</mapper>

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="m">
+	<select id="getList" resultType="hashmap">
+		SELECT M_NO, M_ID, M_PW, M_NM, DEL_DT
+		FROM M
+	</select>
+	<insert id="mAdds">
+		INSERT INTO M (M_NO, M_ID, M_PW, M_NM)
+        VALUES (M_SEQ.NEXTVAL, #{id}, #{pw}, #{name})
+	</insert>
+	<select id="checkId" resultType="int" parameterType="hashmap">
+		SELECT COUNT(*) AS CNT
+		FROM M
+		WHERE M_ID = #{id}
+	</select>
+	<select id="getLogin" resultType="hashmap" parameterType="hashmap">
+		SELECT M_NO, M_NM
+		FROM M
+		WHERE DEL_DT IS NULL
+		AND M_ID = #{id}
+		AND M_PW = #{pw}
+	</select>
+</mapper>

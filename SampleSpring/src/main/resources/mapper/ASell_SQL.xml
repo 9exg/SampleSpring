@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="asell">
+<select id="getTbCnt" resultType="Integer" parameterType="hashmap">
+	SELECT COUNT(*) AS CNT
+	FROM SELL
+	WHERE 1 = 1
+	<if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+		<choose>
+			<when test="searchGbn == 0 "> <!-- 검색 구분이 상품명 일때 -->
+				AND ITEM_NAME LIKE '%' || #{searchTxt} || '%'
+			</when>
+			<when test="searchGbn == 1"> <!-- 검색 구분이 상품번호 일때 -->
+				AND SELL_NO LIKE '%' || #{searchTxt} || '%'
+			</when>
+		</choose>
+	</if>
+</select>
+
+<select id="getTbList" resultType="hashmap" parameterType="hashmap">
+	SELECT R.SELL_NO, R.ITEM_NAME, R.COUNT, R.SELL_DT
+	FROM (SELECT SELL_NO, ITEM_NAME, COUNT, TO_CHAR(SELL_DT, 'YYYY-MM-DD') AS SELL_DT, 
+	               ROW_NUMBER() OVER (ORDER BY SELL_NO DESC) AS RNUM
+	      FROM SELL
+	      WHERE 1 = 1
+	      		<if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+					<choose>
+						<when test="searchGbn == 0 "> <!-- 검색 구분이 상품명 일때 -->
+							AND ITEM_NAME LIKE '%' || #{searchTxt} || '%'
+						</when>
+						<when test="searchGbn == 1"> <!-- 검색 구분이 상품번호 일때 -->
+							AND SELL_NO LIKE '%' || #{searchTxt} || '%'
+						</when>
+					</choose>
+				</if>
+	      ) R
+	WHERE R.RNUM BETWEEN #{startCount} AND #{endCount}
+</select>
+
+<select id="aSell" resultType="hashmap" parameterType="hashmap">
+	SELECT SELL_NO, ITEM_NAME, COUNT, TO_CHAR(SELL_DT, 'YYYY-MM-DD') AS SELL_DT
+	FROM SELL
+	WHERE SELL_NO = #{no}
+</select>
+
+<insert id="aSellAdd" parameterType="hashmap">
+	INSERT INTO SELL (SELL_NO, ITEM_NAME, COUNT, SELL_DT)
+    	      VALUES (SELL_SEQ.nextval, #{itemName}, #{sellCnt}, #{sellDt})
+</insert>
+
+<update id="aSellUpdate" parameterType="hashmap">
+	UPDATE SELL SET ITEM_NAME = #{itemName},
+                	COUNT = #{sellCnt},
+               		SELL_DT = #{sellDt}
+	WHERE SELL_NO = #{no}
+</update>
+
+<delete id="aSellDelete" parameterType="hashmap">
+	DELETE FROM SELL
+	WHERE SELL_NO = #{no}
+</delete>
+</mapper>

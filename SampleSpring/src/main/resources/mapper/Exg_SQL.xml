@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="blank">
+
+	<select id="getTbList" resultType="hashmap" parameterType="hashmap">
+		SELECT TB_NO, TB_TITLE, TB_WRITER, TB_HIT, TB_DT
+		FROM ( SELECT TB_NO, TB_TITLE, TB_WRITER, TB_HIT, TO_CHAR(TB_DT, 'YYYY-MM-DD') AS TB_DT,
+            		  ROW_NUMBER() OVER(ORDER BY TB_NO DESC) AS RNUM
+  		       FROM TB
+   		       WHERE 1 = 1
+   		    <if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+   		    <choose>
+				<when test="searchGbn == 0 "> <!-- 검색 구분이 제목 일때 -->
+					AND TB_TITLE LIKE '%' || #{searchTxt} || '%'
+				</when>
+				<when test="searchGbn == 1"> <!-- 검색 구분이 작성자 일때 -->
+					AND TB_WRITER LIKE '%' || #{searchTxt} || '%'
+				</when>
+			</choose>
+		</if>
+  		     ) T
+		WHERE T.RNUM BETWEEN #{startCount} AND #{endCount}
+	</select>
+
+</mapper>

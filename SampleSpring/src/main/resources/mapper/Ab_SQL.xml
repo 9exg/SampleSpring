@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="ab">
+<select id="getAbCnt" resultType="Integer" parameterType="hashmap">
+	SELECT COUNT(*) AS CNT
+	FROM AB
+	WHERE M_NO = #{sMNo}
+	AND TO_CHAR(AB_DT, 'YYYY-MM') = #{searchMon} 
+		<if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+			<choose>
+				<when test="searchGbn == 0 "> <!-- 검색 구분이 작성자 일때 -->
+					AND M_NO LIKE '%' || #{searchTxt} || '%'
+				</when>
+				<when test="searchGbn == 1"> <!-- 검색 구분이 내용 일때 -->
+					AND AB_CON LIKE '%' || #{searchTxt} || '%'
+				</when>
+			</choose>
+		</if>
+</select>
+
+<!-- <select id="getAbList" resultType="hashmap" parameterType="hashmap">
+	SELECT AB_NO, M_NO, PRICE, AB_CON, AB_TYPE, AB_DT, REG_DT
+	FROM AB
+	WHERE AB_NO BETWEEN #{startCnt} AND #{endCnt}
+</select> -->
+
+ <select id="getAbList" resultType="hashmap" parameterType="hashmap">
+	SELECT AB_NO, M_NM, PRICE, AB_CON, AB_TYPE, 
+		   TO_CHAR(AB_DT, 'YYYY-MM-DD') AS AB_DT, TO_CHAR(REG_DT, 'YYYY-MM-DD') AS REG_DT
+	FROM (SELECT AB.AB_NO, M.M_NM, AB.PRICE, AB.AB_CON, AB.AB_TYPE, AB.AB_DT, AB.REG_DT, 
+	             ROW_NUMBER() OVER(ORDER BY AB_NO DESC) AS RNUM
+	       FROM AB INNER JOIN M
+	       				   ON AB.M_NO = M.M_NO
+	       WHERE M.M_NO = #{sMNo}
+		   AND TO_CHAR(AB.AB_DT, 'YYYY-MM') = #{searchMon}
+	       <if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+   		   		 <choose>
+					<when test="searchGbn == 0 "> <!-- 검색 구분이 작성자 일때 -->
+						AND M.M_NM LIKE '%' || #{searchTxt} || '%'
+					</when>
+					<when test="searchGbn == 1"> <!-- 검색 구분이 내용 일때 -->
+						AND AB.AB_CON LIKE '%' || #{searchTxt} || '%'
+					</when>
+				</choose>
+			</if>
+	       ) 
+	WHERE RNUM BETWEEN #{startCount} AND #{endCount}
+</select>
+<insert id="abAdd" parameterType="hashmap">
+	INSERT INTO AB (AB_NO, M_NO, PRICE, AB_CON, AB_TYPE, AB_DT, REG_DT)
+     	    VALUES (AB_SEQ.NEXTVAL, #{writer}, #{amount}, #{con}, #{type}, #{activeDate}, SYSDATE)
+</insert>
+<select id="getAb" parameterType="hashmap" resultType="hashmap">
+	SELECT AB.AB_NO, M.M_NM, M.M_NO, AB.PRICE, AB.AB_CON, AB.AB_TYPE, 
+		   TO_CHAR(AB_DT, 'YYYY-MM-DD') AS AB_DT, TO_CHAR(REG_DT, 'YYYY-MM-DD') AS REG_DT
+	FROM AB INNER JOIN M
+	        ON AB.M_NO = M.M_NO
+	WHERE AB.AB_NO = #{no}
+</select>
+<update id="abUpdate" parameterType="hashmap">
+	UPDATE AB SET PRICE = #{amount},
+	              AB_CON = #{con},
+	              AB_TYPE = #{type},
+	              AB_DT = #{activeDate}
+	WHERE AB_NO = #{no}
+</update>
+<delete id="abDelete" parameterType="hashmap">
+	DELETE FROM AB
+	WHERE AB_NO = #{no}
+</delete>
+<select id="getAnaly" parameterType="hashmap" resultType="hashmap">
+	SELECT M.INSUM, M.OUTSUM, T.TOT
+	FROM (SELECT SUM(DECODE(AB_TYPE, 0 , PRICE, NULL)) AS INSUM,
+	             SUM(DECODE(AB_TYPE, 1 , PRICE, NULL)) AS OUTSUM 
+	      FROM AB
+	      WHERE M_NO = #{sMNo}
+	      AND TO_CHAR(AB_DT, 'YYYY-MM') = #{searchMon}) M INNER JOIN (SELECT SUM(DECODE(AB_TYPE, 0 , PRICE, PRICE * -1 ))AS TOT
+	                                                               FROM AB
+	                                                               WHERE M_NO = #{sMNo} ) T
+	                                                           ON 1 = 1
+</select>
+</mapper>

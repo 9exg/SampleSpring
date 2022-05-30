@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="test">
+<!-- namespace : 클래스 명과 동일 -->
+<!-- id : 메소드명과 동일 -->
+<!-- resultType : 취득할 데이터 row의 형태를 지정 (한 줄에 대한 형태)-->
+	
+<!-- 쿼리부분에 ;은 포함되면 안된다. MyBatis가 끝네 알아서 붙임. -->
+	<select id="getTbCnt" resultType="Integer" parameterType="hashmap">
+		SELECT COUNT(*) AS CNT
+		FROM TB INNER JOIN M
+				        ON TB.TB_WRITER = M.M_NO
+		WHERE 1 = 1  <!-- 조건 필수 항목 -->
+		<if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+			<choose>
+				<when test="searchGbn == 0 "> <!-- 검색 구분이 제목 일때 -->
+					AND TB.TB_TITLE LIKE '%' || #{searchTxt} || '%'
+				</when>
+				<when test="searchGbn == 1"> <!-- 검색 구분이 작성자 일때 -->
+					AND M.M_NM LIKE '%' || #{searchTxt} || '%'
+				</when>
+			</choose>
+		</if>
+	</select>
+
+
+	<select id="getTbList" resultType="hashmap" parameterType="hashmap">
+		SELECT T.TB_NO, T.TB_TITLE, T.M_NM, T.TB_HIT, T.TB_DT, T.ATT_FILE
+		FROM ( SELECT TB.TB_NO, TB.TB_TITLE, M.M_NM,
+				       TB.TB_HIT, TO_CHAR(TB.TB_DT, 'YYYY-MM-DD') AS TB_DT,
+				       TB.ATT_FILE,
+				       ROW_NUMBER() OVER(ORDER BY TB.TB_NO DESC) AS RNUM
+				FROM TB INNER JOIN M
+				                ON TB.TB_WRITER = M.M_NO
+				WHERE 1 = 1
+		   		      <if test="searchTxt !=null and searchTxt != ''"> <!-- 검색어가 있을 때에만 -->
+		   		   	  	 <choose>
+							  <when test="searchGbn == 0 "> <!-- 검색 구분이 제목 일때 -->
+								  AND TB.TB_TITLE LIKE '%' || #{searchTxt} || '%'
+							  </when>
+							  <when test="searchGbn == 1"> <!-- 검색 구분이 작성자 일때 -->
+								  AND M.M_NM LIKE '%' || #{searchTxt} || '%'
+							  </when>
+						  </choose>
+					  </if>
+  		     ) T
+		WHERE T.RNUM BETWEEN #{startCount} AND #{endCount}
+	</select>
+	
+	<!-- #{키} : 키에 해당하는 값을 넣어준다. 앞뒤로 홑따옴표 ' ' 붙임 -->
+	<!-- ${키} : 키에 해당하는 값을 넣어준다. 그냥 넣음 -->
+	<select id="getTb" resultType="hashmap" parameterType="hashmap">
+		SELECT TB.TB_NO, TB.TB_TITLE, TB.TB_CON, TB.TB_WRITER, M.M_NM,
+		        TB.TB_HIT, TO_CHAR(TB.TB_DT, 'YYYY-MM-DD') AS TB_DT, TB.ATT_FILE
+		FROM TB INNER JOIN M
+		                ON TB.TB_WRITER = M.M_NO
+		WHERE TB.TB_NO = #{no}
+	</select>
+	
+	<!--  글 등록하기 -->
+	<insert id="tbWrite" parameterType="hashmap" >
+		INSERT INTO TB(TB_NO, TB_TITLE, TB_WRITER, TB_CON, ATT_FILE)
+		VALUES (TB_SEQ.NEXTVAL, #{title}, #{writer}, #{con}, #{attFile})
+	</insert>
+	
+	<!-- 글 수정하기 -->
+	<!-- update, insert, delete 성공시 mybatis에서 1 반환(return 따로 안적어줘도 무조건) -->
+	<update id="tbUpdate" parameterType="hashmap">
+		UPDATE TB SET TB_TITLE = #{title},
+               		  TB_CON = #{con},
+               		  ATT_FILE = #{attFile}
+		WHERE TB_NO = #{no}
+	</update>
+	
+	<!-- 글 삭제하기 -->
+	<delete id="tbDelete" parameterType="hashmap">
+		DELETE FROM TB
+		WHERE TB_NO = #{no}
+	</delete>
+	
+	<update id="updateTbHit" parameterType="hashmap">
+		UPDATE TB SET TB_HIT = TB_HIT + 1 
+		WHERE TB_NO = #{no}
+	</update>
+	
+	
+</mapper>

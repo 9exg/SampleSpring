@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="lb">
+	<select id="getLbList" resultType="hashmap" parameterType="hashmap">
+		SELECT R.BOOK_NO, R.BOOK_TITLE, R.BOOK_AUTHOR
+		FROM (SELECT BOOK_NO, BOOK_TITLE, BOOK_AUTHOR, ROW_NUMBER() OVER(ORDER BY BOOK_NO DESC) AS RNUM
+		      FROM LB
+		      WHERE LB_DEL = 1) R
+		WHERE R.RNUM BETWEEN #{startCount} AND #{endCount}
+	</select>
+	
+	<select id="getLb" resultType="hashmap" parameterType="hashmap">
+		SELECT BOOK_NO, BOOK_TITLE, BOOK_AUTHOR, BOOK_CO, TO_CHAR(BOOK_DT, 'YYYY-MM-DD') AS BOOK_DT, TO_CHAR(REG_DT, 'YYYY-MM-DD') AS REG_DT
+		FROM LB
+		WHERE BOOK_NO = #{no}
+	</select>
+	
+	<select id="getCnt" resultType="Integer" parameterType="hashmap">
+		SELECT COUNT(*) AS CNT
+		FROM LB
+		WHERE LB_DEL = 1
+	</select>
+	
+	<insert id="lbWrite" parameterType="hashmap">
+		INSERT INTO LB (BOOK_NO, BOOK_TITLE, BOOK_AUTHOR, BOOK_CO, BOOK_DT)
+		VALUES (LB_SEQ.NEXTVAL, #{book_title}, #{book_author}, #{book_co}, #{book_dt})
+	</insert>
+	
+	<update id="lbUpdate" parameterType="hashmap">
+		UPDATE LB SET BOOK_TITLE = #{book_title},
+               		  BOOK_AUTHOR = #{book_author},
+               		  BOOK_CO = #{book_co},
+                      BOOK_DT = #{book_dt}
+  	    WHERE BOOK_NO = #{no}
+	</update>
+	
+	<update id="lbDelete" parameterType="hashmap">
+		UPDATE LB SET LB_DEL = '0'
+  	    WHERE BOOK_NO = #{no}
+	</update>
+</mapper>
